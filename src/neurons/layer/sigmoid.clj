@@ -48,7 +48,6 @@
   layer/Layer
 
   (forward [this in]
-    (println in weights)
     (let [z (m/plus (m/mmult weights in) biases)]
       (Activation. this in z (sigmoid z)))))
 
