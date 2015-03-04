@@ -10,7 +10,7 @@
 (defn- forward [net input]
   (loop [layers      (:layers net)
          a           input
-         activations [input]]
+         activations []]
     (if-let [layer (first layers)]
       (let [a (layer/forward layer a)]
         (recur (rest layers)
@@ -22,16 +22,19 @@
 
 (defn backpropagate
   [net in target ^double rate]
-  (loop [activations (forward net in)
-         delta       (layer/error (peek activations) target)
-         layers      '()]
-    (if-let [a (peek activations)]
-      (let [layer (layer/learn a delta rate)
-            delta (layer/backward a delta)]
-        (recur (pop activations)
-               delta
-               (cons a layers)))
-      layers)))
+  (let [activations (forward net in)]
+    (loop [prev   (peek activations)
+           as     (pop activations)
+           delta  (layer/error prev target)
+           layers (list (layer/learn prev delta rate))]
+      (if-let [a (peek as)]
+        (let [delta   (layer/backward a delta (get-in prev [:layer :weights]))
+              updated (layer/learn a delta rate)]
+          (recur a
+                 (pop as)
+                 delta
+                 (cons updated layers)))
+        layers))))
 
 (defn- label->target [label]
   (m/matrix

@@ -5,5 +5,5 @@
 
 (defprotocol Activation
   (error [_ target])
-  (backward [_ delta])
-  (learn [_ delta  ^double rate]))
+  (backward [_ delta weights])
+  (learn [_ delta rate]))

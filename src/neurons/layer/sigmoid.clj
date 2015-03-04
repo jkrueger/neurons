@@ -32,13 +32,13 @@
     (let [delta-a (cost-derivative activation target)]
       (m/mult delta-a (sigmoid-prime z))))
 
-  (backward [_ delta]
+  (backward [_ delta weights]
     (let [spv (sigmoid-prime z)]
-      (-> (m/mmult (m/trans (:weights layer)) delta)
+      (-> (m/mmult (m/trans weights) delta)
           (m/mult spv))))
 
   (learn [_ delta rate]
-    (let [delta-w (m/mmult delta (m/trans (:activation in)))]
+    (let [delta-w (m/mmult delta (m/trans in))]
       (assoc layer
         :weights (improve (:weights layer) delta-w rate)
         :biases  (improve (:biases layer) delta rate)))))
