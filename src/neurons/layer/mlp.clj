@@ -1,4 +1,4 @@
-(ns neurons.layer.perceptron
+(ns neurons.layer.mlp
   (:require
     [neurons.layer  :as layer]
     [incanter.core  :as m]
@@ -64,7 +64,7 @@
 (defmethod make-activation-fn :logistic [_]
   logistic-activation)
 
-(defn make [size in & {:keys [activation] :or {:activation sigmoid}}]
+(defn make [size in & {:keys [activation] :or {:activation logistic-activation}}]
   (map->Layer
     {:size          size
      :weights       (make-weights size in)
