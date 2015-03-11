@@ -1,8 +1,9 @@
 (ns neurons.core
   (:require
-    [neurons.layer  :as layer]
-    [incanter.core  :as m]
-    [incanter.stats :as s]))
+    [neurons.layer     :as layer]
+    [neurons.layer.mlp :as mlp]
+    [incanter.core     :as m]
+    [incanter.stats    :as s]))
 
 (defn make [& layers]
   {:layers (vec layers)})
