@@ -1,12 +1,12 @@
 (ns neurons.core
   (:require
-    [neurons.layer     :as layer]
-    [neurons.layer.mlp :as mlp]
-    [incanter.core     :as m]
-    [incanter.stats    :as s]))
+    [neurons.layer    :as layer]
+    [neurons.function :as function]
+    [incanter.core    :as m]
+    [incanter.stats   :as s]))
 
-(defn make [& layers]
-  {:layers (vec layers)})
+(defn make [net]
+  (layer/make net))
 
 (defn- forward [net input]
   (loop [layers      (:layers net)
@@ -29,7 +29,8 @@
            delta  (layer/error prev target)
            layers (list (layer/learn prev delta rate))]
       (if-let [a (peek as)]
-        (let [delta   (layer/backward a delta (get-in prev [:layer :weights]))
+        (let [weights (get-in prev [:layer :weights])
+              delta   (layer/backward a delta weights)
               updated (layer/learn a delta rate)]
           (recur a
                  (pop as)
@@ -37,32 +38,28 @@
                  (cons updated layers)))
         layers))))
 
-(defn- label->target [label]
-  (m/matrix
-    (assoc (vec (repeat 10 0.0))
-           (int label)
-           1.0)
-    1))
+
 
 (defn- update-network [rate net batch]
   (let [samples (count batch)
         rate    (/ rate samples)]
     (reduce
-      (fn [net [data target]]
-        (let [layers (backpropagate net data target rate)]
+      (fn [net sample]
+        (let [data   (:in sample)
+              target (:result sample)
+              layers (backpropagate net data target rate)]
           (assoc net :layers layers)))
       net
       batch)))
 
-(defn learn [net data epochs batch-size rate]
-  (let [data  (map (fn [[x y]] (vector x (label->target y))) data)
-        epoch (atom 0)]
+(defn learn [net f epochs data-size batch-size rate]
+  (let [sample-size (/ data-size batch-size)]
     (nth (iterate
           (fn [net]
-            (println "starting epoch" (swap! epoch inc))
-            (->> (shuffle data)
-                 (partition batch-size)
-                 (reduce (partial update-network rate) net)))
+            (reduce
+              (partial update-network rate)
+              net
+              (function/draw f sample-size batch-size)))
           net)
          epochs)))
 
@@ -75,8 +72,8 @@
 (defn accuracy [net data]
   (->> data
        (filter
-         (fn [[sample target]]
-           (= (guess (run net sample))
-              target)))
+         (fn [sample]
+           (= (guess (run net (:in sample)))
+              (:label sample))))
        (count)
        (* (/ 1 (count data))) (float)))

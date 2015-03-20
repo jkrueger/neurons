@@ -55,18 +55,27 @@
   (m/matrix (s/sample-normal size) 1))
 
 (defn- make-weights [size in]
-  (let [incoming (:size in)
-        weights  (* incoming size)]
-    (m/matrix (s/sample-normal weights) incoming)))
+  (let [weights  (* in size)]
+    (m/matrix (s/sample-normal weights) in)))
 
 (defmulti make-activation-fn (fn [k] k))
 
 (defmethod make-activation-fn :logistic [_]
   logistic-activation)
 
-(defn make [size in & {:keys [activation] :or {:activation logistic-activation}}]
+(defn make-neuron-layer [activation-fn [in size]]
   (map->Layer
-    {:size          size
-     :weights       (make-weights size in)
-     :biases        (make-biases size)
-     :activation-fn (make-activation-fn activation)}))
+   {:size          size
+    :weights       (make-weights size in)
+    :biases        (make-biases size)
+    :activation-fn activation-fn}))
+
+(defmethod layer/make "mlp"
+  [{:keys [in layers activation]
+    :or   {:activation :logistic}}]
+  (let [activation-fn (make-activation-fn activation)
+        layer-fn      (partial make-neuron-layer activation-fn)
+        layers        (->> (cons in layers)
+                           (partition 2 1)
+                           (mapv layer-fn))]
+    {:layers layers}))

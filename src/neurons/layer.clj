@@ -7,3 +7,5 @@
   (error [_ target])
   (backward [_ delta weights])
   (learn [_ delta rate]))
+
+(defmulti make :type)
